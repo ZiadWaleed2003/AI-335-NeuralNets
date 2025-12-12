@@ -1,6 +1,6 @@
 import torch
-import torch.functional as F
-from torchvision import models , transforms
+import torch.nn.functional as F
+from torchvision import models, transforms
 from PIL import Image
 
 from src.vgg.VGG import VGG19FromScratch
@@ -34,7 +34,7 @@ CLASS_NAMES = ['AM General Hummer SUV 2000', 'Acura RL Sedan 2012', 'Acura TL Se
 
 
 
-def load_model(model_name : str ,device=None,root_dir="./src/models/"):
+def load_model(model_name: str, device=None, root_dir="./src/models/"):
     
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,7 +44,7 @@ def load_model(model_name : str ,device=None,root_dir="./src/models/"):
         num_features = model.fc.in_features
         model.fc = torch.nn.Linear(num_features, 196)
 
-        model_path = f"{root_dir}{model_name}.pth"
+        model_path = f"{root_dir}ResNet.pth"
         model.load_state_dict(torch.load(model_path, map_location=device))
         model = model.to(device)
         model.eval()
@@ -52,21 +52,45 @@ def load_model(model_name : str ,device=None,root_dir="./src/models/"):
         return model
     
     elif model_name.lower() == "vgg":
-
-        model_path = f"{root_dir}{model_name}.pth"
+        model_path = f"{root_dir}VGG.pth"
         model = VGG19FromScratch(196)
         model.load_state_dict(torch.load(model_path, map_location=device))
         model = model.to(device)
         model.eval()
 
         return model
+    
+    elif model_name.lower() == "mobilenet":
+        model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
+        num_features = model.classifier[1].in_features
+        model.classifier[1] = torch.nn.Linear(num_features, 196)
+
+        model_path = f"{root_dir}MobileNet.pth"
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model = model.to(device)
+        model.eval()
+
+        return model
+    
+    elif model_name.lower() == "inceptionv1":
+        model = models.googlenet(weights=models.GoogLeNet_Weights.DEFAULT)
+        num_features = model.fc.in_features
+        model.fc = torch.nn.Linear(num_features, 196)
+
+        model_path = f"{root_dir}InceptionV1.pth"
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model = model.to(device)
+        model.eval()
+
+        return model
+    
     else:
-        raise ValueError(f"Unknown model type: Use 'resnet' or 'vgg'.")
+        raise ValueError(f"Unknown model type: {model_name}. Use 'resnet', 'vgg', 'mobilenet', or 'inceptionv1'.")
 
 
 
 
-def pre_processing(model_name:str):
+def pre_processing(model_name: str):
 
     if model_name.lower() == "resnet":
         transform = transforms.Compose([
@@ -78,7 +102,24 @@ def pre_processing(model_name:str):
         return transform
     
     elif model_name.lower() == "vgg":
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
 
+        return transform
+    
+    elif model_name.lower() == "mobilenet":
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+
+        return transform
+    
+    elif model_name.lower() == "inceptionv1":
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -88,13 +129,13 @@ def pre_processing(model_name:str):
         return transform
 
     else:
-      raise ValueError(f"Couldn't load the trasnformation for Vgg nor Resnet")
+        raise ValueError(f"Couldn't load the transformation for model: {model_name}")
 
 
 
 
 
-def inference(model_name , img_path , num_classes=196 , device = None):
+def inference(model_name, img_path, num_classes=196, device=None):
 
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -104,7 +145,7 @@ def inference(model_name , img_path , num_classes=196 , device = None):
     img = Image.open(img_path).convert('RGB')
     input_tensor = transform(img).unsqueeze(0).to(device)
 
-    model = load_model(model_name , device)
+    model = load_model(model_name, device)
 
     # Perform inference
     with torch.no_grad():
