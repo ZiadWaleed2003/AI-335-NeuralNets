@@ -4,6 +4,7 @@ from torchvision import models, transforms
 from PIL import Image
 
 from src.vgg.VGG import VGG19FromScratch
+from src.models.mobilenet import MobileNet
 
 
 
@@ -61,11 +62,8 @@ def load_model(model_name: str, device=None, root_dir="./src/models/"):
         return model
     
     elif model_name.lower() == "mobilenet":
-        model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
-        num_features = model.classifier[1].in_features
-        model.classifier[1] = torch.nn.Linear(num_features, 196)
-
-        model_path = f"{root_dir}MobileNet.pth"
+        model_path = f"{root_dir}mobilenet_best.pth"
+        model = MobileNet(196)
         model.load_state_dict(torch.load(model_path, map_location=device))
         model = model.to(device)
         model.eval()
@@ -77,7 +75,7 @@ def load_model(model_name: str, device=None, root_dir="./src/models/"):
         num_features = model.fc.in_features
         model.fc = torch.nn.Linear(num_features, 196)
 
-        model_path = f"{root_dir}InceptionV1.pth"
+        model_path = f"{root_dir}inception_v1_best.pth"
         model.load_state_dict(torch.load(model_path, map_location=device))
         model = model.to(device)
         model.eval()
