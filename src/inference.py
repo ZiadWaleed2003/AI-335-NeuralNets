@@ -86,17 +86,13 @@ def load_model(model_name: str, device=None, root_dir="./src/models/"):
         raise ValueError(f"Unknown model type: {model_name}. Use 'resnet', 'vgg', 'mobilenet', or 'inceptionv1'.")
 
 
-
-
 def pre_processing(model_name: str):
-
     if model_name.lower() == "resnet":
         transform = transforms.Compose([
             transforms.Resize((256, 256)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-
         return transform
     
     elif model_name.lower() == "vgg":
@@ -105,31 +101,28 @@ def pre_processing(model_name: str):
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-
         return transform
     
     elif model_name.lower() == "mobilenet":
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize(256),           
+            transforms.CenterCrop(224),        
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-
         return transform
     
     elif model_name.lower() == "inceptionv1":
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((256, 256)),
+            transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-
         return transform
-
+    
     else:
         raise ValueError(f"Couldn't load the transformation for model: {model_name}")
-
-
 
 
 
