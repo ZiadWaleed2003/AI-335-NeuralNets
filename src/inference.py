@@ -4,7 +4,7 @@ from torchvision import models, transforms
 from PIL import Image
 
 from src.vgg.VGG import VGG19FromScratch
-from src.models.mobilenet import MobileNet
+from src.mobilenet import MobileNet
 
 
 
